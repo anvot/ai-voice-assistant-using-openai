@@ -1,0 +1,69 @@
+### 1. Choose a client for using Let's Encrypt
+
+The most popular option for Windows is **win-acme** ([official website](https://www.win-acme.com/), previously called "letsencrypt-win-simple").
+
+---
+
+### 2. Download win-acme
+
+- Go to the [download page](https://www.win-acme.com/download/)
+- Download the latest version for your bitness (usually x64)
+- Unzip the archive to any folder on the server
+
+---
+
+### 3. Prepare your domain
+
+- Make sure your domain is already configured and accessible online (e.g., 'example.com')
+- DNS records must point to your server
+- Port 80 (HTTP) must be open on the server (this is mandatory. You can temporarily forward port 80 for issuing a certificate)
+
+### 4. Configure Flask
+from flask import Flask, send_from_directory
+@app.route('/.well-known/acme-challenge/<filename>')
+def acme_challenge(filename):
+# path where win-acme will write Challenge files
+return send_from_directory('.well-known/acme-challenge', filename)
+
+---
+
+### 5. Run win-acme
+
+- Open **Command Prompt** as administrator
+- Go to the folder with the unzipped win-acme
+- Run `wacs.exe`
+
+---
+
+### 6. Follow the wizard's instructions
+
+- M: Create certificate (full options)
+- 2: Manual input
+- aispecialist.online
+- 4: Single certificate
+- 1: [http] Save verification files on (network) path
+- C:\AI-Voice-Assistant-using-OpenAI
+- 2: RSA key
+This isn't what Petey went through next, but the logic should be to save the certificate and key to the specified folder.
+- 2: PEM encoded files (Apache, nginx, etc.)
+...
+Then the created files are specified in the assistant's config.py.
+
+---
+
+### 7. Installing the Certificate
+
+- Once the wizard receives the certificate, it will ask whether it should be installed in IIS/Windows immediately.
+- Usually, win-acme does this automatically if the appropriate option is selected.
+
+---
+
+### 8. Configure Automatic Renewal
+
+- win-acme will automatically add a task to the Windows Scheduler to renew the certificate; it typically runs twice a day.
+
+---
+
+### 9. Done!
+
+Your site is now accessible via HTTPS with a valid certificate.

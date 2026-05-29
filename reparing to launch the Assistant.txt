@@ -1,0 +1,64 @@
+•	Install the MongoDB database
+
+Edit mongod.cfg:
+dbPath: C:\data (Your database path. For some reason, it doesn't work if the path contains spaces. You can specify any other location, as the database is located in Program Files by default, and the path there contains a space.)
+
+#security:
+# authorization: enabled (login via authorization)
+
+Run the command prompt AS ADMINISTRATOR!!!!!
+Then start the MongoDB database manually: in cmd:
+cd C:\Program Files\MongoDB\Server\4.2\bin
+mongod --config C:\!!!YOUR PATH!!!\mongod.cfg
+
+To avoid starting it manually, you can set MongoDB to autostart as a Service when Windows boots. cd C:\Program Files\MongoDB\Server\4.2\bin
+mongod --config C:\!!!YOUR PATH!!!\mongod.cfg --install
+sc config MongoDB start= auto
+
+(If necessary: ​​remove the MongoDB service: sc delete MongoDB)
+
+Creating a database with a login and password
+cd C:\Program Files\MongoDB\Server\4.2\bin
+mongo
+use !!!YOUR NAME!!!
+db.createUser({ user: "!!!username!!!", pwd: "!!!userpassword!!!", roles: ["dbOwner" ,"readWrite","dbAdmin"]})
+mydocdb = { firstName : "!!!your name!!!" }
+db.user.insert(mydocdb)
+
+(Log in using !!!YOURNAME!!!
+db.auth("!!!username!!!", "!!!userpassword!!!") )
+
+(If needed: delete a user db.dropUser("!!!username!!!") )
+
+You can manage your MongoDB database using MongoDB Compass by connecting using the connection string:
+mongodb://!!!username!!!:!!!userpassword!!!@127.0.0.1:27017?authSource=!!!YOURNAME!!!
+
+(If you disable database authorization in the config, then the connection string is: mongodb://127.0.0.1:27017)
+
+Example of creating a virtual environment (in cmd):
+
+Create a venv folder in C:\
+cd C:\venv
+
+py -3.12 -m venv AI-Voice-Assistant-using-OpenAI
+
+(Here, AI-Voice-Assistant-using-OpenAI is the name of the folder storing the python.exe interpreter and packages installed in the environment. This environment is saved at <working folder>\YOURFOLDER. You can change the working folder with the command cd <new path>)
+
+Start the virtual environment:
+
+AI-Voice-Assistant-using-OpenAI\Scripts\activate
+
+(After this, cmd will display (AI-Voice-Assistant-using-OpenAI) <current working folder> >)
+
+cd C:\AI-Voice-Assistant-using-OpenAI\
+
+python.exe -m pip install --upgrade pip
+
+pip install -r requirements.txt
+
+Run with a microphone (first, run the commands in the file "Creating_SSL_cert_LetsEncrypt_for_microphone_function_in_browser.txt")
+then move the certificate and key to the folder with app.py
+
+Deactivating the virtual environment:
+
+deactivate

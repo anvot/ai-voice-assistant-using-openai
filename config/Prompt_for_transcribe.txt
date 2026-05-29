@@ -1,0 +1,1 @@
+If you can't recognize the speech, then in your answer, output only these signs: '!0!'

@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Assistant</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            height: 100vh;
+            width: 100vw;
+            min-height: 100vh;
+            background: url('/static/backgrounds/Metallicheskaya_1.jpg') no-repeat center center fixed;
+            background-size: cover;
+            font-family: 'Inter', Arial, sans-serif;
+            color: #fff;
+            position: relative;
+            overflow-x: hidden;
+        }
+        .container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: stretch;
+        }
+        .header {
+            text-align: center;
+            margin-top: 4vw;
+            margin-bottom: 4vw;
+            letter-spacing: 2px;
+        }
+        .header h1 {
+            font-weight: 2800;
+            font-size: 6.4vw;
+            margin: 0 .5rem .5rem .5rem;
+            text-shadow: 0 2px 7px rgba(0,0,0,0.2);
+        }
+        .btn-bar {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 2vw;
+            margin-bottom: 1vw;
+            /* Responsive font size */
+        }
+        .btn-custom {
+            font-size: clamp(14px, 2.4vw, 32px) !important;
+            padding: clamp(6px, 1.2vw, 16px) clamp(16px, 4vw, 53px) !important;
+            min-width: 100px;
+            border-radius: 26px !important;
+            border: none;
+            background: linear-gradient(90deg, #39a5f7 0%, #4aebbd 100%);
+            color: #fff;
+            font-weight: 600;
+            box-shadow: 0 6px 18px 0 rgba(50,130,255,0.20);
+            cursor: pointer;
+            transition: background 0.22s, transform 0.15s;
+            outline: none;
+        }
+        .btn-custom:active {
+            transform: translateY(2px) scale(0.97);
+        }
+        .btn-custom:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .status-center {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 36vh;
+        }
+        .status-text {
+            font-size: clamp(21px, 5.2vw, 73px) !important;
+            font-weight: 700;
+            letter-spacing: 1px;
+            padding: 0.7em 2em;
+            background: rgba(20,20,28,0.48);
+            border-radius: 30px;
+            min-width: 250px;
+            min-height: 2.5em;
+            text-align: center;
+            box-shadow: 0 2px 28px 0 rgba(55,100,160,0.12);
+            margin: 10vh auto 0 auto;
+        }
+       .wave-anim-holder {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            margin-top: 10px;
+            pointer-events: none; 
+            position: relative;
+        }
+        #wave-listening, #wave-playing {
+            display: none;
+            width: clamp(260px, 48vw, 640px);
+            height: clamp(28px, 7vw, 80px);
+        }
+        @media (max-width: 900px) {
+            #wave-listening, #wave-playing { width: 90vw; height: 60px; }
+        }
+        @media (max-width: 600px) {
+            #wave-listening, #wave-playing { width: 96vw; height: 36px; }
+        }
+        /* Simple cards for response & transcriptions */
+        .info-panel {
+            width: 100%; max-width: 500px;
+            margin: 2vh auto 1vw auto;
+            background: rgba(25,30,40,0.62);
+            border-radius: 24px;
+            padding: 1vw 2vw 1.5vw 2vw;
+            color: #e6e6eb;
+            font-size: 1.2em;
+            min-height: 28px;
+            box-shadow: 0 2px 10px 0 rgba(22,60,100,0.09);
+            backdrop-filter: blur(1.5px);
+        }
+        .info-panel p { margin: .2em 0; }
+        .history-panel {
+            position: fixed;
+            right: 0;
+            top: 0;
+            width: 240px; max-width: 72vw;
+            background: rgba(0,17,40,.19);
+            color: #ffffffde;
+            height: 100vh;
+            padding: 1vw 2vw;
+            border-radius: 22px 0 0 20px;
+            font-size: 0.95em;
+            overflow-y: auto;
+            box-shadow: -3px 0 16px 0 rgba(80,80,160,0.06);
+            display: none;
+        }
+        .show-history { display: block !important;}
+        .history-title { font-weight: bold; font-size: 1.12em;}
+        .history-item { margin-bottom: 1em;}
+        .toggle-history-btn {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            background: rgba(45,98,255,0.9);
+            color: #fff;
+            border: none;
+            border-radius: 14px;
+            padding: 7px 10px 7px 13px;
+            font-size: 1.17em;
+            cursor: pointer;
+            z-index: 999;
+            transition: background .19s;
+        }
+        .toggle-history-btn:hover { background: #183870;}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>AI Assistant</h1>
+    </div>
+    <div class="btn-bar">
+        <button id="startButton" class="btn-custom">Start</button>
+        <button id="stopButton" class="btn-custom" disabled>Stop</button>
+        <button id="pauseButton" class="btn-custom" disabled>Pause</button>
+    </div>
+    <!-- Waves -->
+    <div class="wave-anim-holder">
+        <canvas id="wave-listening"></canvas>
+        <canvas id="wave-playing"></canvas>
+    </div>
+    <!-- Статус-панель -->
+    <div class="status-center"><div id="status" class="status-text">Press "Start"</div></div>
+    <!-- text panel -->
+    <div id="transcriptions" class="info-panel"></div>
+    <div id="fullResponse" class="info-panel"></div>
+    <div id="audioResponse" class="info-panel"></div>
+
+</div>
+
+<script>
+    /* ========== [ Wave Animations ] ========== */
+    const waveListening = document.getElementById('wave-listening');
+    const wavePlaying = document.getElementById('wave-playing');
+
+    const waves = {
+        listening: { canvas: waveListening, raf: null, t: 0, running: false, direction: 'rtl', color: '#38ee97' }, 
+        playing:   { canvas: wavePlaying,   raf: null, t: 0, running: false, direction: 'ltr', color: '#6fe7ff' }  
+    };
+
+    function sizeCanvas(c) {
+        const dpr = window.devicePixelRatio || 1;
+        const cssW = c.clientWidth || 440;
+        const cssH = c.clientHeight || 64;
+        c.width = Math.floor(cssW * dpr);
+        c.height = Math.floor(cssH * dpr);
+        const ctx = c.getContext('2d');
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function drawWave(c, t, dir, color) {
+        const ctx = c.getContext('2d');
+        const dpr = window.devicePixelRatio || 1;
+        const w = c.width / dpr;
+        const h = c.height / dpr;
+        ctx.clearRect(0, 0, w, h);
+
+        const mid = h / 2;
+        const amp = Math.max(8, h * 0.28);
+        const speed = 2.2;
+        const phase = (dir === 'rtl' ? -t : t) * speed;
+
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = color;
+        ctx.globalAlpha = 0.9;
+
+        // Основная волна
+        ctx.beginPath();
+        for (let x = 0; x <= w; x += 2) {
+            const y = mid
+                + Math.sin((x + phase * 20) * 0.02) * amp * 0.6
+                + Math.cos((x + phase * 12) * 0.012) * amp * 0.4;
+            if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+
+        
+        ctx.globalAlpha = 0.35;
+        ctx.beginPath();
+        for (let x = 0; x <= w; x += 2) {
+            const y = mid
+                - Math.sin((x + phase * 22) * 0.018) * amp * 0.55;
+            if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+
+        ctx.globalAlpha = 1;
+    }
+    function animateWave(key) {
+        const o = waves[key];
+        if (!o.running) return;
+        drawWave(o.canvas, o.t, o.direction, o.color);
+        o.t += 0.08;
+        o.raf = requestAnimationFrame(() => animateWave(key));
+    }
+
+    function hideWave(key) {
+        const o = waves[key];
+        o.running = false;
+        if (o.raf) cancelAnimationFrame(o.raf);
+        o.raf = null;
+        const ctx = o.canvas.getContext('2d');
+        if (ctx) ctx.clearRect(0, 0, o.canvas.width, o.canvas.height);
+        o.canvas.style.display = 'none';
+    }
+
+    function showWave(key, show = true) {
+        const o = waves[key];
+        if (show) {
+            o.canvas.style.display = 'block';
+            sizeCanvas(o.canvas);
+            if (!o.running) {
+            o.running = true;
+            animateWave(key);
+        }
+        
+        Object.keys(waves).forEach(k => { if (k !== key) hideWave(k); });
+        } else {
+            hideWave(key);
+        }
+    }
+
+    function showListeningWave(show = true) { showWave('listening', show); }
+    function showPlayingWave(show = true)   { showWave('playing', show); }
+
+    window.addEventListener('resize', () => {
+        Object.values(waves).forEach(o => {
+            if (o.canvas.style.display === 'block') sizeCanvas(o.canvas);
+        });
+    });
+
+    
+    
+    function setStatus(text) {
+        let statusEl = document.getElementById("status");
+        statusEl.textContent = text;
+        
+        if (text === 'Слушаю') { showListeningWave(true); showPlayingWave(false);}
+        else if (text === 'Play') { showListeningWave(false); showPlayingWave(true);}
+        else { showListeningWave(false); showPlayingWave(false);}
+    }
+
+
+    let audioContext = null;
+    let mediaStream = null;
+    let analyser = null;
+    let dataArray = null;
+    let mediaRecorder = null;
+
+    let shouldStop = false;
+    let isRecording = false; // audio recording trigger (audio playback stops when audio recording starts)
+    let lastAudioBlob = null;
+    let rmsHistory = [];
+    let currentAudio = null; // Variable for storing the current audio
+    let audioQueue = []; // Audio fragment queue
+    let isPlaying = false; // playback queue trigger
+    let isPaused = false; // pause state trigger
+    let noSpeechTrigger = null;  // Speech trigger. True if speech is not recognized, False if speech is recognized
+
+    // SSE (EventSource) Variables 
+    let eventSource = null; // Add a variable to control the flow of events
+    let sseReconnectTimeout = null;
+    let sseReconnectDelay = 2000; // initial delay 2 seconds
+    let sseMaxReconnectDelay = 30000; // maximum 30 seconds
+    let sseConnected = false;
+
+    const startButton = document.getElementById('startButton');
+    const stopButton = document.getElementById('stopButton');
+    const pauseButton = document.getElementById('pauseButton');
+    const status = document.getElementById('status');
+    const transcriptions = document.getElementById('transcriptions');
+    const fullResponse = document.getElementById('fullResponse');
+    const audioResponse = document.getElementById('audioResponse');
+
+    const silenceThresholdScale = 0.5; // coefficient of signal level (for determining silence)
+    const activationThresholdScale = 10; // Coefficient for triggering the start of recording
+    const maxSilenceDurationForFragments = 300; // the maximum duration of "silence" in milliseconds for detecting audio fragments
+    const maxSilenceDurationForEnd = 1000; // the maximum duration of "silence" in milliseconds to determine the end of a statement
+    const RmsThreshold = 0.8; // RMS threshold of silence
+    const maxHistoryLength = Math.floor((2 * 1000) / (1000 / 60)); // number of "measurements" in 2 seconds
+
+    // === ИНИЦИАЛИЗАЦИЯ АУДИОСИСТЕМЫ ===
+    async function initAudioSystem() {
+        if (!audioContext) {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (!mediaStream) {
+            mediaStream = await navigator.mediaDevices.getUserMedia({
+                audio: {
+                    echoCancellation: true, // echo suppression enclosure activation
+                    noiseSuppression: true, // noise suppression activation
+                    autoGainControl: true // automatic gain control
+                }
+            });
+        }
+        if (!analyser) {
+            analyser = audioContext.createAnalyser();
+            analyser.fftSize = 2048; // Setting the FFT size
+            const source = audioContext.createMediaStreamSource(mediaStream);
+            source.connect(analyser);
+            dataArray = new Uint8Array(analyser.fftSize);
+        }
+        if (!mediaRecorder) {
+            mediaRecorder = new MediaRecorder(mediaStream);
+        }
+    }
+
+    // === CLEANING THE AUDIO SYSTEM ===
+    function cleanupAudioSystem() {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+            mediaRecorder.stop();
+        }
+        mediaRecorder = null;
+
+        if (analyser) {
+            analyser.disconnect();
+            analyser = null;
+        }
+        dataArray = null;
+
+        if (audioContext) {
+            audioContext.close();
+            audioContext = null;
+        }
+        if (mediaStream) {
+            mediaStream.getTracks().forEach(track => track.stop());
+            mediaStream = null;
+        }
+    }
+
+    // === RMS - root mean square signal level ===
+    function calculateRMS(dataArray) {
+        return Math.sqrt(dataArray.reduce((sum, value) => {
+            return sum + Math.pow(value - 128, 2);
+        }, 0) / dataArray.length);
+    }
+
+    // Average RMS
+    function updateRmsHistory(rms, rmsHistory) {
+        rmsHistory.push(rms);
+        if (rmsHistory.length > maxHistoryLength) {
+            rmsHistory.shift();
+        }
+        return rmsHistory.reduce((sum, value) => sum + value, 0) / rmsHistory.length;
+    }
+
+    // Calculating RMS and Average RMS for calibration at startup
+    async function calculateStartRMS() {
+        for (let i = 0; i <= 100; i++) {
+            analyser.getByteTimeDomainData(dataArray);
+            const rms = calculateRMS(dataArray);
+            const avgRms = updateRmsHistory(rms, rmsHistory);
+            //console.log(`Current RMS: ${rms}, Average RMS: ${avgRms}`);
+            //console.log("analyser", analyser, "dataArray", dataArray);
+            //console.log(`RMS History: ${rmsHistory.length}`);
+            await new Promise(resolve => setTimeout(resolve, 16));
+        }
+    }
+
+    // Function to get the state of the noSpeechTrigger trigger from the server
+    async function updateNoSpeechTrigger() {
+        try {
+            let resp = await fetch('/is_speech_recognized');
+            let data = await resp.json();
+            noSpeechTrigger = (data.no_speech === true);
+            console.log(`Request in the updateNoSpeechTrigger function TRIGGER = ${noSpeechTrigger}`);
+        } catch (err) {
+            console.error("Speech recognition trigger check error:", err);
+            noSpeechTrigger = false;
+        }
+    }
+
+    // === BUTTONS===
+    startButton.addEventListener('click', async () => {
+        await initAudioSystem();
+        shouldStop = false;
+        isRecording = false;
+        startButton.disabled = true;
+        stopButton.disabled = false;
+        pauseButton.disabled = false;
+        transcriptions.innerHTML = "";
+        fullResponse.innerHTML = "";
+        audioResponse.innerHTML = "";
+        setStatus('Wait');
+        await calculateStartRMS();
+        setStatus('Готов');
+        monitorAudio();
+        startStream();
+    });
+
+    stopButton.addEventListener('click', async () => {
+        shouldStop = true;
+        startButton.disabled = false;
+        stopButton.disabled = true;
+        pauseButton.disabled = true;
+        pauseButton.textContent = "Pause";
+        setStatus('Stoped');
+
+        // If the audio is already playing, stop it.
+        stopAudioQueue();
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+            mediaRecorder.stop();
+            //console.log('***STOP***');
+        }
+        // Close SSE and reset the reconnection timer
+        if (eventSource) {
+            eventSource.close();
+            eventSource = null; // Removing a link to an object
+            //console.log("Stream stopped!");
+        }
+        if (sseReconnectTimeout) {
+            clearTimeout(sseReconnectTimeout);
+            sseReconnectTimeout = null;
+        }
+        stopPlay();
+        cleanupAudioSystem();
+    });
+
+    // Pause/resume queue button
+    pauseButton.addEventListener('click', () => {
+        if (!isPaused) {
+            pauseAudioQueue();
+            pauseButton.textContent = "Resume";
+            setStatus('Pause');
+        } else {
+            resumeAudioQueue();
+            pauseButton.textContent = "Pause";
+            if (audioQueue.length === 0) {
+                setStatus("Ready")
+            } else {
+                setStatus('Play')
+            }
+        }
+    });
+
+    // === AUDIO MONITORING ===
+    async function monitorAudio() {
+        while (!shouldStop) {
+            analyser.getByteTimeDomainData(dataArray);
+            const rms = calculateRMS(dataArray);
+            const avgRms = updateRmsHistory(rms, rmsHistory);
+            //console.log(`Current RMS: ${rms}, Average RMS: ${avgRms}, AVGRMS+THREH: ${avgRms + activationThresholdScale}`);
+
+            if (!isRecording && rms > avgRms + activationThresholdScale) {
+                // Displaying RMS values
+                console.log(`Current RMS: ${rms}, Average RMS: ${avgRms}, AVGRMS+THREH: ${avgRms + activationThresholdScale}`);
+
+                console.log('***START***');
+                pauseAudioQueue();
+                isRecording = true;
+                recordAudio();
+            }
+
+            await new Promise(resolve => setTimeout(resolve, 16));
+        }
+    }
+
+    // === AUDIO RECORDING ===
+    async function recordAudio() {
+        if (!isRecording || !mediaRecorder || mediaRecorder.state === 'recording') return;
+
+        setStatus('Слушаю');
+        mediaRecorder.start();
+        let lastSilentTime = 0;
+        let isSilence = false;
+
+        while (!shouldStop && isRecording) {
+            await new Promise(resolve => {
+                let recordingStartTime = Date.now();
+
+                mediaRecorder.ondataavailable = async (event) => {
+                    lastAudioBlob = new Blob([event.data], { type: 'audio/webm' });
+                    sendAudioData(lastAudioBlob);
+                    resolve();
+                };
+
+                async function checkSilence() {
+                    analyser.getByteTimeDomainData(dataArray);
+                    const rms = calculateRMS(dataArray);
+                    const avgRms = updateRmsHistory(rms, rmsHistory);
+
+                    // To determine silence in the presence of background noise (when the average RMS does not change in the last seconds)
+                    const avgRmsSlice = updateRmsHistory(rms, rmsHistory.slice(-maxHistoryLength/2));
+                    //console.log(Math.abs(avgRms - avgRmsSlice))
+
+                    // Displaying RMS values ​​and silence time in the console
+                    //console.log(`Current RMS: ${rms}, Average RMS: ${avgRms}, Average RMSSlice: ${avgRmsSlice}`);
+                    // if (isSilence) {
+                    //    console.log(`Time Since Last Silence: ${Date.now() - lastSilentTime} ms`);
+                    // }
+                    if (rms < avgRms * silenceThresholdScale || Math.abs(avgRms - avgRmsSlice) < 0.01) {
+                        //console.log(`***silence*** !!!!!!!!!!!!!!!!!!!!!!`);
+                        if (!isSilence) {
+                            isSilence = true;
+                            lastSilentTime = Date.now();
+                        } else if (Date.now() - lastSilentTime > maxSilenceDurationForFragments && Date.now() - recordingStartTime >= 2000) {
+                            mediaRecorder.stop();
+                            console.log(`***End_2000*** ${Date.now() - recordingStartTime} ms`);
+                            recordingStartTime = Date.now();
+                            return;
+                        } else if (Date.now() - lastSilentTime > maxSilenceDurationForEnd) {
+                            mediaRecorder.stop();
+                            console.log(`***End of statement*** ${Date.now() - lastSilentTime} ms`);
+                            isRecording = false;
+                            noSpeechTrigger = null;
+           
+                            await updateNoSpeechTrigger();
+                            
+                            if (!noSpeechTrigger) {
+                                stopAudioQueue();
+                                // stopPlay();
+                                console.log(`"Speech recognized`);
+                                finalizeTranscription();
+                                finalizeTranscription_0();
+                            } else if (noSpeechTrigger) {
+                                resumeAudioQueue();
+                                console.log(`Speech not recognized`);
+                            }
+                            return;
+                        }
+                    } else {
+                        isSilence = false;
+                    }
+                    requestAnimationFrame(checkSilence);
+                }
+                checkSilence();
+
+                if (mediaRecorder.state == 'inactive') {
+                    mediaRecorder.start();
+                    //console.log('***START AFTER SILENCE***');
+                }
+            });
+        }
+    }
+
+    // === SENDING AUDIO TO THE SERVER ===
+    async function sendAudioData(audioBlob) {
+        const formData = new FormData();
+        formData.append('audio_data', audioBlob);
+
+        try {
+            const transresponse = await fetch('/transcribe', { method: 'POST', body: formData });
+            const data = await transresponse.json();
+            if (data.error) console.error(data.error);
+            else {
+                const p = document.createElement('p');
+                p.textContent = data.transcribed_text;
+                transcriptions.appendChild(p);
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    // === Sending a signal to the server to receive a response from the Assistant ===
+    async function finalizeTranscription() {
+        try {
+            const response = await fetch('/finalize', { method: 'POST' });
+            const data = await response.json();
+            if (data.error) console.error(data.error);
+            else {
+                const pFull = document.createElement('p');
+                pFull.textContent = "Full Text: " + data.full_text;
+                fullResponse.appendChild(pFull);
+
+                const pAIResponse = document.createElement('p');
+                pAIResponse.textContent = "AI Response: " + data.ai_response;
+                audioResponse.appendChild(pAIResponse);
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    // Sending a signal to the server to receive a response from the Model
+    async function finalizeTranscription_0() {
+        try {
+            const response_0 = await fetch('/finalize_0', { method: 'POST' });
+            const data = await response_0.json();
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    // Sending a signal to the server to interrupt playback
+    async function stopPlay() {
+        try {
+            const stopresponse = await fetch('/stopplay', { method: 'POST' });
+            const data = await stopresponse.json();
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    // === CASCADE PLAYBACK ===
+    // Play the next audio fragment from the queue
+    function playNext() {
+        if (audioQueue.length === 0) {
+            isPlaying = false;
+            currentAudio = null;
+            if (!isPaused) setStatus('Ready');
+            return;
+        }
+        isPlaying = true;
+        const audioSrc = audioQueue.shift();
+        currentAudio = new Audio(audioSrc);
+
+        currentAudio.onended = playNext;
+        currentAudio.onerror = playNext;
+
+        currentAudio.oncanplaythrough = function () {
+            if (!isPaused && currentAudio) {
+                currentAudio.play()
+                    .catch(err => {
+                        console.error("Playback error:", err);
+                        playNext();
+                    });
+                setStatus('Playback');
+            }
+        };
+    }
+
+    // Incoming audio data processor
+    function onAudioMessage(audioData) {
+        audioQueue.push(audioData);
+        if (!isPlaying && !isPaused) playNext();
+    }
+
+    // Stop the queue and current playback
+    function stopAudioQueue() {
+        audioQueue = [];
+        if (currentAudio) {
+            currentAudio.onended = null;
+            currentAudio.onerror = null;
+            currentAudio.pause();
+            currentAudio.currentTime = 0;
+            currentAudio = null;
+        }
+        isPlaying = false;
+        isPaused = false;
+        console.log('*stop the queue and current playback*');
+    }
+
+    // Pause (entire queue and current audio)
+    function pauseAudioQueue() {
+        isPaused = true;
+        if (currentAudio) {
+            currentAudio.pause();
+        }
+        setStatus('Pause');
+    }
+
+    // Resume playback (from current or queue)
+    function resumeAudioQueue() {
+        if (!isPaused) return;
+        isPaused = false;
+        if (currentAudio) {
+            currentAudio.play()
+                .catch(err => {
+                    console.error("Playback error:", err);
+                    playNext();
+                });
+        } else if (audioQueue.length > 0) {
+            playNext();
+        };
+        if (audioQueue.length === 0) {
+            setStatus('Ready')
+        } else {
+            setStatus('Playback')
+        }
+    }
+
+    // === SSE STREAM FOR RECEIVING AI AUDIO RESPONSE WITH RECONNECTION ===
+    function startStream() {
+        // Close the old EventSource, if any.
+        if (eventSource) {
+            eventSource.close();
+            eventSource = null;
+        }
+        if (sseReconnectTimeout) {
+            clearTimeout(sseReconnectTimeout);
+            sseReconnectTimeout = null;
+        }
+
+        eventSource = new EventSource('/stream');
+        sseConnected = false;
+
+        eventSource.onopen = function() {
+            sseConnected = true;
+            sseReconnectDelay = 2000; // reset delay after successful connection
+            // setStatus('SSE: Connected');
+            console.log('SSE: Connection to server opened.');
+        };
+
+        eventSource.onmessage = function(event) {
+            //console.log('Audio data received:', event.data);
+            if (!shouldStop && !isRecording) {
+                onAudioMessage(event.data);
+            }
+        };
+
+        eventSource.onerror = function(e) {
+            sseConnected = false;
+            setStatus('SSE: Disconnected. Reconnecting...');
+            console.error('SSE: Error encountered.', e);
+
+            // Close the current connection
+            if (eventSource) {
+                eventSource.close();
+                eventSource = null;
+            }
+            stopAudioQueue();
+
+            // Reconnection with delay (exponential growth)
+            sseReconnectTimeout = setTimeout(() => {
+                sseReconnectDelay = Math.min(sseReconnectDelay * 2, sseMaxReconnectDelay);
+                startStream();
+            }, sseReconnectDelay);
+        };
+        console.log("Stream started!");
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+1. Add parameters to the config\.env file
+2. Run assistant_update.py
+
+Or use the Assistants web interface on the OpenAI website

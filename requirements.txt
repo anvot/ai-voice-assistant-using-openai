@@ -1,0 +1,10 @@
+openai==1.101.0
+httpx==0.27.0
+httpcore==1.0.5
+Flask[async]==3.0.3
+python-dotenv==1.0.1
+flask-httpauth==4.8.0
+cherrypy==18.10.0
+pymongo==4.3.3
+requests==2.32.3
+duckduckgo_search==5.3.1b1
